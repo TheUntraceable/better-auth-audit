@@ -73,6 +73,7 @@ function writeAuditEntry(ctx: Record<string, any>, data: {
       metadata: ctx.body ? JSON.stringify(ctx.body) : null,
       success: data.success,
       errorCode: data.errorCode ?? null,
+      createdAt: new Date(),
     },
   });
 }

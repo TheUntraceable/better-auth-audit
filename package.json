@@ -34,7 +34,8 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "peerDependencies": {
     "better-auth": "^1.2.0",
@@ -44,6 +45,7 @@
     "better-auth": "^1.2.0",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
+    "vitest": "^4.1.0",
     "zod": "^3.0.0"
   },
   "license": "MIT"
