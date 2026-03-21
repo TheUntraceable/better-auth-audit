@@ -41,6 +41,11 @@ export const schema = {
         type: "string",
         required: false,
       },
+      createdAt: {
+        type: "date",
+        required: true,
+        input: false,
+      },
     },
   },
 } satisfies PluginSchema;

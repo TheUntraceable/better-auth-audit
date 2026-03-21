@@ -1,19 +1,12 @@
-import type { AuditRouter, MessageContext } from "../types";
-
-function exact(target: string) {
-  return (path: string) => path === target;
-}
-
-function errorCode(ctx: MessageContext): string {
-  return ctx.errorCode ?? "UNKNOWN_ERROR";
-}
+import type { AuditRouter } from "../types";
+import { exact, errorCode } from "./utils";
 
 export const multiSessionRouter: AuditRouter = {
   id: "multi-session",
   routes: [
     {
       match: exact("/multi-session/set-active"),
-      message: (ctx) => "Switched active session",
+      message: () => "Switched active session",
     },
     {
       match: exact("/multi-session/revoke"),

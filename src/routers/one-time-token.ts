@@ -1,23 +1,16 @@
-import type { AuditRouter, MessageContext } from "../types";
-
-function exact(target: string) {
-  return (path: string) => path === target;
-}
-
-function errorCode(ctx: MessageContext): string {
-  return ctx.errorCode ?? "UNKNOWN_ERROR";
-}
+import type { AuditRouter } from "../types";
+import { exact, errorCode } from "./utils";
 
 export const oneTimeTokenRouter: AuditRouter = {
   id: "one-time-token",
   routes: [
     {
       match: exact("/one-time-token/generate"),
-      message: (ctx) => "Generated a one-time token",
+      message: () => "Generated a one-time token",
     },
     {
       match: exact("/one-time-token/verify"),
-      message: (ctx) => "Verified a one-time token",
+      message: () => "Verified a one-time token",
     },
   ],
   failureRoutes: [
