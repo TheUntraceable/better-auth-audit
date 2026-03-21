@@ -1,5 +1,5 @@
 import type { AuditRouter } from "../types";
-import { userLabel, bodyEmail, exact, errorCode } from "./utils";
+import { userLabel, bodyEmail, exact, describeError } from "./utils";
 
 export const adminRouter: AuditRouter = {
   id: "admin",
@@ -82,45 +82,45 @@ export const adminRouter: AuditRouter = {
   failureRoutes: [
     {
       match: exact("/admin/create-user"),
-      message: (ctx) => `${userLabel(ctx)} failed to create user ${bodyEmail(ctx)} (${errorCode(ctx)})`,
+      message: (ctx) => `${userLabel(ctx)} failed to create user ${bodyEmail(ctx)} — ${describeError(ctx.errorCode)}`,
     },
     {
       match: exact("/admin/set-role"),
-      message: (ctx) => `${userLabel(ctx)} failed to set role — ${errorCode(ctx)}`,
+      message: (ctx) => `${userLabel(ctx)} failed to set role — ${describeError(ctx.errorCode)}`,
     },
     {
       match: exact("/admin/ban-user"),
       message: (ctx) => {
         const userId = ctx.body?.["userId"];
-        return `${userLabel(ctx)} failed to ban user ${userId} (${errorCode(ctx)})`;
+        return `${userLabel(ctx)} failed to ban user ${userId} — ${describeError(ctx.errorCode)}`;
       },
     },
     {
       match: exact("/admin/unban-user"),
       message: (ctx) => {
         const userId = ctx.body?.["userId"];
-        return `${userLabel(ctx)} failed to unban user ${userId} (${errorCode(ctx)})`;
+        return `${userLabel(ctx)} failed to unban user ${userId} — ${describeError(ctx.errorCode)}`;
       },
     },
     {
       match: exact("/admin/impersonate-user"),
       message: (ctx) => {
         const userId = ctx.body?.["userId"];
-        return `${userLabel(ctx)} failed to impersonate user ${userId} (${errorCode(ctx)})`;
+        return `${userLabel(ctx)} failed to impersonate user ${userId} — ${describeError(ctx.errorCode)}`;
       },
     },
     {
       match: exact("/admin/revoke-user-sessions"),
       message: (ctx) => {
         const userId = ctx.body?.["userId"];
-        return `${userLabel(ctx)} failed to revoke sessions for user ${userId} (${errorCode(ctx)})`;
+        return `${userLabel(ctx)} failed to revoke sessions for user ${userId} — ${describeError(ctx.errorCode)}`;
       },
     },
     {
       match: exact("/admin/remove-user"),
       message: (ctx) => {
         const userId = ctx.body?.["userId"];
-        return `${userLabel(ctx)} failed to remove user ${userId} (${errorCode(ctx)})`;
+        return `${userLabel(ctx)} failed to remove user ${userId} — ${describeError(ctx.errorCode)}`;
       },
     },
   ],

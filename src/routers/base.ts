@@ -1,5 +1,5 @@
 import type { AuditRouter, MessageContext } from "../types";
-import { userLabel, bodyEmail, exact, errorCode } from "./utils";
+import { userLabel, bodyEmail, exact, describeError } from "./utils";
 
 export const baseRouter: AuditRouter = {
   id: "base",
@@ -99,41 +99,41 @@ export const baseRouter: AuditRouter = {
   failureRoutes: [
     {
       match: exact("/sign-in/email"),
-      message: (ctx) => `Failed sign-in attempt for ${bodyEmail(ctx)} (${errorCode(ctx)})`,
+      message: (ctx) => `Failed sign-in for ${bodyEmail(ctx)} — ${describeError(ctx.errorCode)}`,
     },
     {
       match: exact("/sign-in/social"),
       message: (ctx) => {
         const provider = ctx.body?.["provider"] ?? "unknown";
-        return `Failed sign-in via ${provider} for ${bodyEmail(ctx)} (${errorCode(ctx)})`;
+        return `Failed sign-in via ${provider} for ${bodyEmail(ctx)} — ${describeError(ctx.errorCode)}`;
       },
     },
     {
       match: (path) => path.startsWith("/callback/"),
       message: (ctx) => {
         const provider = ctx.path.replace("/callback/", "");
-        return `OAuth callback failed for ${provider} (${errorCode(ctx)})`;
+        return `OAuth callback failed for ${provider} — ${describeError(ctx.errorCode)}`;
       },
     },
     {
       match: exact("/sign-up/email"),
-      message: (ctx) => `Failed sign-up attempt for ${bodyEmail(ctx)} (${errorCode(ctx)})`,
+      message: (ctx) => `Failed sign-up for ${bodyEmail(ctx)} — ${describeError(ctx.errorCode)}`,
     },
     {
       match: exact("/verify-password"),
-      message: (ctx) => `${userLabel(ctx)} failed password verification (${errorCode(ctx)})`,
+      message: (ctx) => `${userLabel(ctx)} failed password verification — ${describeError(ctx.errorCode)}`,
     },
     {
       match: exact("/forget-password"),
-      message: (ctx) => `Password reset requested for non-existent ${bodyEmail(ctx)} (${errorCode(ctx)})`,
+      message: (ctx) => `Password reset requested for ${bodyEmail(ctx)} — ${describeError(ctx.errorCode)}`,
     },
     {
       match: exact("/reset-password"),
-      message: (ctx) => `Failed password reset — invalid or expired token (${errorCode(ctx)})`,
+      message: (ctx) => `Password reset failed — ${describeError(ctx.errorCode)}`,
     },
     {
       match: exact("/verify-email"),
-      message: (ctx) => `Failed email verification — invalid or expired token (${errorCode(ctx)})`,
+      message: (ctx) => `Email verification failed — ${describeError(ctx.errorCode)}`,
     },
   ],
 };

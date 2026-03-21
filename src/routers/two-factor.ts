@@ -1,5 +1,5 @@
 import type { AuditRouter } from "../types";
-import { userLabel, exact, errorCode } from "./utils";
+import { userLabel, exact, describeError } from "./utils";
 
 export const twoFactorRouter: AuditRouter = {
   id: "two-factor",
@@ -40,19 +40,19 @@ export const twoFactorRouter: AuditRouter = {
   failureRoutes: [
     {
       match: exact("/two-factor/verify-totp"),
-      message: (ctx) => `${userLabel(ctx)} failed TOTP verification (${errorCode(ctx)})`,
+      message: (ctx) => `${userLabel(ctx)} failed TOTP verification — ${describeError(ctx.errorCode)}`,
     },
     {
       match: exact("/two-factor/verify-otp"),
-      message: (ctx) => `${userLabel(ctx)} failed OTP verification (${errorCode(ctx)})`,
+      message: (ctx) => `${userLabel(ctx)} failed OTP verification — ${describeError(ctx.errorCode)}`,
     },
     {
       match: exact("/two-factor/verify-backup-code"),
-      message: (ctx) => `${userLabel(ctx)} failed backup code verification (${errorCode(ctx)})`,
+      message: (ctx) => `${userLabel(ctx)} failed backup code verification — ${describeError(ctx.errorCode)}`,
     },
     {
       match: exact("/two-factor/send-otp"),
-      message: (ctx) => `${userLabel(ctx)} failed to send 2FA OTP — rate limited (${errorCode(ctx)})`,
+      message: (ctx) => `${userLabel(ctx)} failed to send 2FA OTP — ${describeError(ctx.errorCode)}`,
     },
   ],
 };

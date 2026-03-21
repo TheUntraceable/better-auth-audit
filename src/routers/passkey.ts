@@ -1,5 +1,5 @@
 import type { AuditRouter } from "../types";
-import { userLabel, exact, errorCode } from "./utils";
+import { userLabel, exact, describeError } from "./utils";
 
 export const passkeyRouter: AuditRouter = {
   id: "passkey",
@@ -36,11 +36,11 @@ export const passkeyRouter: AuditRouter = {
   failureRoutes: [
     {
       match: exact("/sign-in/passkey"),
-      message: (ctx) => `${userLabel(ctx)} failed passkey sign-in (${errorCode(ctx)})`,
+      message: (ctx) => `${userLabel(ctx)} failed passkey sign-in — ${describeError(ctx.errorCode)}`,
     },
     {
       match: exact("/passkey/add-passkey"),
-      message: (ctx) => `${userLabel(ctx)} failed to register passkey (${errorCode(ctx)})`,
+      message: (ctx) => `${userLabel(ctx)} failed to register passkey — ${describeError(ctx.errorCode)}`,
     },
   ],
 };

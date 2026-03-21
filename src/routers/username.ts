@@ -1,5 +1,5 @@
 import type { AuditRouter } from "../types";
-import { userLabel, exact, errorCode } from "./utils";
+import { userLabel, exact, describeError } from "./utils";
 
 export const usernameRouter: AuditRouter = {
   id: "username",
@@ -20,8 +20,8 @@ export const usernameRouter: AuditRouter = {
       message: (ctx) => {
         const username = ctx.body?.["username"];
         return typeof username === "string"
-          ? `Failed sign-in attempt for username "${username}" (${errorCode(ctx)})`
-          : `Failed username sign-in (${errorCode(ctx)})`;
+          ? `Failed sign-in for username "${username}" — ${describeError(ctx.errorCode)}`
+          : `Failed username sign-in — ${describeError(ctx.errorCode)}`;
       },
     },
   ],

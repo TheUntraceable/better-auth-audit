@@ -1,5 +1,5 @@
 import type { AuditRouter } from "../types";
-import { userLabel, exact, errorCode } from "./utils";
+import { userLabel, exact, describeError } from "./utils";
 
 export const apiKeyRouter: AuditRouter = {
   id: "api-key",
@@ -31,7 +31,7 @@ export const apiKeyRouter: AuditRouter = {
   failureRoutes: [
     {
       match: exact("/api-key/create"),
-      message: (ctx) => `${userLabel(ctx)} failed to create API key (${errorCode(ctx)})`,
+      message: (ctx) => `${userLabel(ctx)} failed to create API key — ${describeError(ctx.errorCode)}`,
     },
   ],
 };

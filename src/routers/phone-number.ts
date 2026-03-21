@@ -1,5 +1,5 @@
 import type { AuditRouter } from "../types";
-import { userLabel, bodyPhone, exact, errorCode } from "./utils";
+import { bodyPhone, exact, describeError } from "./utils";
 
 export const phoneNumberRouter: AuditRouter = {
   id: "phone-number",
@@ -28,19 +28,19 @@ export const phoneNumberRouter: AuditRouter = {
   failureRoutes: [
     {
       match: exact("/sign-in/phone-number"),
-      message: (ctx) => `Failed sign-in for phone ${bodyPhone(ctx)} (${errorCode(ctx)})`,
+      message: (ctx) => `Failed sign-in for phone ${bodyPhone(ctx)} — ${describeError(ctx.errorCode)}`,
     },
     {
       match: exact("/phone-number/verify"),
-      message: (ctx) => `Failed OTP verification for ${bodyPhone(ctx)} (${errorCode(ctx)})`,
+      message: (ctx) => `Failed OTP verification for ${bodyPhone(ctx)} — ${describeError(ctx.errorCode)}`,
     },
     {
       match: exact("/phone-number/send-otp"),
-      message: (ctx) => `Failed to send OTP to ${bodyPhone(ctx)} (${errorCode(ctx)})`,
+      message: (ctx) => `Failed to send OTP to ${bodyPhone(ctx)} — ${describeError(ctx.errorCode)}`,
     },
     {
       match: exact("/phone-number/reset-password"),
-      message: (ctx) => `Failed phone password reset for ${bodyPhone(ctx)} (${errorCode(ctx)})`,
+      message: (ctx) => `Failed phone password reset for ${bodyPhone(ctx)} — ${describeError(ctx.errorCode)}`,
     },
   ],
 };

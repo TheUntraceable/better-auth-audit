@@ -1,5 +1,5 @@
 import type { AuditRouter } from "../types";
-import { exact, errorCode } from "./utils";
+import { exact, describeError } from "./utils";
 
 export const multiSessionRouter: AuditRouter = {
   id: "multi-session",
@@ -19,11 +19,11 @@ export const multiSessionRouter: AuditRouter = {
   failureRoutes: [
     {
       match: exact("/multi-session/set-active"),
-      message: (ctx) => `Failed to switch active session (${errorCode(ctx)})`,
+      message: (ctx) => `Failed to switch active session — ${describeError(ctx.errorCode)}`,
     },
     {
       match: exact("/multi-session/revoke"),
-      message: (ctx) => `Failed to revoke device session (${errorCode(ctx)})`,
+      message: (ctx) => `Failed to revoke device session — ${describeError(ctx.errorCode)}`,
     },
   ],
 };

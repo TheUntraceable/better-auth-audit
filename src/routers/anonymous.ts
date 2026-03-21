@@ -1,5 +1,5 @@
 import type { AuditRouter } from "../types";
-import { userLabel, exact, errorCode } from "./utils";
+import { userLabel, exact, describeError } from "./utils";
 
 export const anonymousRouter: AuditRouter = {
   id: "anonymous",
@@ -16,7 +16,7 @@ export const anonymousRouter: AuditRouter = {
   failureRoutes: [
     {
       match: exact("/sign-in/anonymous"),
-      message: (ctx) => `Failed anonymous sign-in (${errorCode(ctx)})`,
+      message: (ctx) => `Failed anonymous sign-in — ${describeError(ctx.errorCode)}`,
     },
   ],
 };

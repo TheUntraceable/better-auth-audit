@@ -1,5 +1,5 @@
 import type { AuditRouter } from "../types";
-import { exact, errorCode } from "./utils";
+import { exact, describeError } from "./utils";
 
 export const oneTimeTokenRouter: AuditRouter = {
   id: "one-time-token",
@@ -16,7 +16,7 @@ export const oneTimeTokenRouter: AuditRouter = {
   failureRoutes: [
     {
       match: exact("/one-time-token/verify"),
-      message: (ctx) => `Failed one-time token verification (${errorCode(ctx)})`,
+      message: (ctx) => `Failed one-time token verification — ${describeError(ctx.errorCode)}`,
     },
   ],
 };

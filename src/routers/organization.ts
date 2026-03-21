@@ -1,5 +1,5 @@
 import type { AuditRouter } from "../types";
-import { userLabel, exact, errorCode } from "./utils";
+import { userLabel, exact, describeError } from "./utils";
 
 export const organizationRouter: AuditRouter = {
   id: "organization",
@@ -81,29 +81,29 @@ export const organizationRouter: AuditRouter = {
   failureRoutes: [
     {
       match: exact("/organization/create"),
-      message: (ctx) => `${userLabel(ctx)} failed to create organization (${errorCode(ctx)})`,
+      message: (ctx) => `${userLabel(ctx)} failed to create organization — ${describeError(ctx.errorCode)}`,
     },
     {
       match: exact("/organization/invite-member"),
       message: (ctx) => {
         const email = ctx.body?.["email"];
-        return `${userLabel(ctx)} failed to invite ${email} (${errorCode(ctx)})`;
+        return `${userLabel(ctx)} failed to invite ${email} — ${describeError(ctx.errorCode)}`;
       },
     },
     {
       match: exact("/organization/accept-invitation"),
-      message: (ctx) => `${userLabel(ctx)} failed to accept invitation (${errorCode(ctx)})`,
+      message: (ctx) => `${userLabel(ctx)} failed to accept invitation — ${describeError(ctx.errorCode)}`,
     },
     {
       match: exact("/organization/remove-member"),
       message: (ctx) => {
         const memberId = ctx.body?.["memberIdOrEmail"];
-        return `${userLabel(ctx)} failed to remove member ${memberId} (${errorCode(ctx)})`;
+        return `${userLabel(ctx)} failed to remove member ${memberId} — ${describeError(ctx.errorCode)}`;
       },
     },
     {
       match: exact("/organization/update-member-role"),
-      message: (ctx) => `${userLabel(ctx)} failed to update member role (${errorCode(ctx)})`,
+      message: (ctx) => `${userLabel(ctx)} failed to update member role — ${describeError(ctx.errorCode)}`,
     },
   ],
 };
