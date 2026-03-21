@@ -2,16 +2,35 @@ import { describe, it, expect, beforeAll } from "vitest";
 import { getTestInstance } from "better-auth/test";
 import { testUtils, admin } from "better-auth/plugins";
 import { auditLog } from "../index";
+import { auditLogClient } from "../client";
+
+interface AuditLogEntry {
+  id: string;
+  userId: string | null;
+  message: string;
+  endpoint: string;
+  ipAddress: string | null;
+  userAgent: string | null;
+  metadata: unknown;
+  success: boolean;
+  errorCode: string | null;
+  createdAt: Date;
+}
 
 const { auth, client, signInWithTestUser, testUser } = await getTestInstance(
   {
     plugins: [testUtils(), admin(), auditLog({ logFailures: true })],
   },
-  { testWith: "sqlite" },
+  {
+    testWith: "sqlite",
+    clientOptions: {
+      plugins: [auditLogClient()],
+    },
+  },
 );
 
-let ctx: any;
-let test: any;
+let ctx: Awaited<typeof auth.$context>;
+let test: typeof ctx.test;
 
 beforeAll(async () => {
   ctx = await auth.$context;
@@ -23,14 +42,14 @@ describe("audit log plugin", () => {
     it("should log sign-in via email", async () => {
       await signInWithTestUser();
 
-      const logs = await ctx.adapter.findMany({
+      const logs = (await ctx.adapter.findMany({
         model: "auditLog",
         where: [{ field: "endpoint", value: "/sign-in/email" }],
-      });
+      })) as AuditLogEntry[];
 
       expect(logs.length).toBeGreaterThanOrEqual(1);
       const log = logs.find(
-        (l: any) => l.success === true && l.message.includes("signed in via email"),
+        (l) => l.success === true && l.message.includes("signed in via email"),
       );
       expect(log).toBeDefined();
       expect(log!.success).toBe(true);
@@ -45,13 +64,13 @@ describe("audit log plugin", () => {
         name: "Signup Test",
       });
 
-      const logs = await ctx.adapter.findMany({
+      const logs = (await ctx.adapter.findMany({
         model: "auditLog",
         where: [{ field: "endpoint", value: "/sign-up/email" }],
-      });
+      })) as AuditLogEntry[];
 
       const log = logs.find(
-        (l: any) =>
+        (l) =>
           l.success === true && l.message.includes("signup-test@example.com"),
       );
       expect(log).toBeDefined();
@@ -65,13 +84,13 @@ describe("audit log plugin", () => {
         fetchOptions: { headers },
       });
 
-      const logs = await ctx.adapter.findMany({
+      const logs = (await ctx.adapter.findMany({
         model: "auditLog",
         where: [{ field: "endpoint", value: "/sign-out" }],
-      });
+      })) as AuditLogEntry[];
 
       const log = logs.find(
-        (l: any) => l.success === true && l.message.includes("signed out"),
+        (l) => l.success === true && l.message.includes("signed out"),
       );
       expect(log).toBeDefined();
     });
@@ -88,13 +107,13 @@ describe("audit log plugin", () => {
         },
       });
 
-      const logs = await ctx.adapter.findMany({
+      const logs = (await ctx.adapter.findMany({
         model: "auditLog",
         where: [{ field: "endpoint", value: "/sign-in/email" }],
-      });
+      })) as AuditLogEntry[];
 
       const log = logs.find(
-        (l: any) =>
+        (l) =>
           l.success === true && l.userAgent === "vitest-test-agent",
       );
       expect(log).toBeDefined();
@@ -111,13 +130,13 @@ describe("audit log plugin", () => {
         })
         .catch(() => {});
 
-      const logs = await ctx.adapter.findMany({
+      const logs = (await ctx.adapter.findMany({
         model: "auditLog",
         where: [{ field: "endpoint", value: "/sign-in/email" }],
-      });
+      })) as AuditLogEntry[];
 
       const failureLog = logs.find(
-        (l: any) =>
+        (l) =>
           l.success === false &&
           l.message.includes("invalid email or password"),
       );
@@ -135,13 +154,13 @@ describe("audit log plugin", () => {
         })
         .catch(() => {});
 
-      const logs = await ctx.adapter.findMany({
+      const logs = (await ctx.adapter.findMany({
         model: "auditLog",
         where: [{ field: "endpoint", value: "/sign-up/email" }],
-      });
+      })) as AuditLogEntry[];
 
       const failureLog = logs.find(
-        (l: any) =>
+        (l) =>
           l.success === false &&
           l.message.includes("email already registered"),
       );
@@ -188,9 +207,9 @@ describe("audit log plugin", () => {
       await test.saveUser(user);
       const headers = await test.getAuthHeaders({ userId: user.id });
 
-      const response = await auth.api.getAuditLogs({
+      const response = await client.auditLog.logs({
         query: { limit: 10 },
-        headers,
+        fetchOptions: { headers },
       });
 
       expect(response).toBeDefined();
@@ -206,9 +225,9 @@ describe("audit log plugin", () => {
       await test.saveUser(adminUser);
       const headers = await test.getAuthHeaders({ userId: adminUser.id });
 
-      const response = await auth.api.getAuditLogs({
+      const response = await client.auditLog.logs({
         query: { limit: 50 },
-        headers,
+        fetchOptions: { headers },
       });
 
       expect(response).toBeDefined();
@@ -229,9 +248,9 @@ describe("audit log plugin", () => {
       await test.saveUser(adminUser);
       const headers = await test.getAuthHeaders({ userId: adminUser.id });
 
-      const response = await auth.api.getAuditLogs({
+      const response = await client.auditLog.logs({
         query: { userId: targetUser.id, limit: 10 },
-        headers,
+        fetchOptions: { headers },
       });
 
       expect(response).toBeDefined();
@@ -251,14 +270,14 @@ describe("audit log plugin", () => {
       const headersA = await test.getAuthHeaders({ userId: userA.id });
       const headersB = await test.getAuthHeaders({ userId: userB.id });
 
-      await auth.api.getAuditLogs({
+      await client.auditLog.logs({
         query: { limit: 100 },
-        headers: headersA,
+        fetchOptions: { headers: headersA },
       });
 
-      const logsB = await auth.api.getAuditLogs({
+      const logsB = await client.auditLog.logs({
         query: { limit: 100 },
-        headers: headersB,
+        fetchOptions: { headers: headersB },
       });
 
       if (Array.isArray(logsB)) {
@@ -281,13 +300,13 @@ describe("audit log plugin", () => {
         })
         .catch(() => {});
 
-      const logs = await ctx.adapter.findMany({
+      const logs = (await ctx.adapter.findMany({
         model: "auditLog",
         where: [{ field: "endpoint", value: "/sign-in/email" }],
-      });
+      })) as AuditLogEntry[];
 
       const failureLog = logs.find(
-        (l: any) => l.success === false && l.errorCode,
+        (l) => l.success === false && l.errorCode,
       );
       expect(failureLog).toBeDefined();
       expect(typeof failureLog!.errorCode).toBe("string");
@@ -300,21 +319,22 @@ describe("audit log plugin", () => {
         password: testUser.password,
       });
 
-      const logs = await ctx.adapter.findMany({
+      const logs = (await ctx.adapter.findMany({
         model: "auditLog",
         where: [{ field: "endpoint", value: "/sign-in/email" }],
         sortBy: { field: "createdAt", direction: "desc" },
         limit: 1,
-      });
+      })) as AuditLogEntry[];
 
       expect(logs.length).toBe(1);
-      expect(logs[0].metadata).toBeTruthy();
+      const entry = logs[0]!;
+      expect(entry.metadata).toBeTruthy();
 
       // SQLite stores JSON as object, other DBs as string
-      const meta = typeof logs[0].metadata === "string"
-        ? JSON.parse(logs[0].metadata)
-        : logs[0].metadata;
-      expect(meta.email).toBe(testUser.email);
+      const meta = typeof entry.metadata === "string"
+        ? JSON.parse(entry.metadata as string)
+        : entry.metadata;
+      expect((meta as Record<string, unknown>).email).toBe(testUser.email);
     });
   });
 });
