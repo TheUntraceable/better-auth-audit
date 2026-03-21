@@ -132,11 +132,18 @@ export const auditLog = (options: AuditLogOptions = {}) => {
               const message = handler.message(msgCtx);
               if (!message) return;
 
-              await writeAuditEntry(ctx, {
-                message,
-                success: false,
-                errorCode: apiError.errorCode,
-              }).catch(() => {});
+              ctx.context.runInBackground(
+                writeAuditEntry(ctx, {
+                  message,
+                  success: false,
+                  errorCode: apiError.errorCode,
+                }).catch((err: unknown) => {
+                  ctx.context.logger.warn(
+                    "[audit-log] Failed to write failure entry:",
+                    err,
+                  );
+                }),
+              );
             } else {
               // This is a success — find a matching success route
               const handler = successRoutes.find((r) => r.match(path));
@@ -160,10 +167,17 @@ export const auditLog = (options: AuditLogOptions = {}) => {
               const message = handler.message(msgCtx);
               if (!message) return;
 
-              await writeAuditEntry(ctx, {
-                message,
-                success: true,
-              }).catch(() => {});
+              ctx.context.runInBackground(
+                writeAuditEntry(ctx, {
+                  message,
+                  success: true,
+                }).catch((err: unknown) => {
+                  ctx.context.logger.warn(
+                    "[audit-log] Failed to write success entry:",
+                    err,
+                  );
+                }),
+              );
             }
           }),
         },
