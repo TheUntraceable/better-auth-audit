@@ -16,6 +16,10 @@ function exact(target: string) {
   return (path: string) => path === target;
 }
 
+function errorCode(ctx: MessageContext): string {
+  return ctx.errorCode ?? "UNKNOWN_ERROR";
+}
+
 export const baseRouter: AuditRouter = {
   id: "base",
   routes: [
@@ -109,6 +113,46 @@ export const baseRouter: AuditRouter = {
     {
       match: exact("/update-session"),
       message: (ctx) => `${userLabel(ctx)} updated session data`,
+    },
+  ],
+  failureRoutes: [
+    {
+      match: exact("/sign-in/email"),
+      message: (ctx) => `Failed sign-in attempt for ${bodyEmail(ctx)} (${errorCode(ctx)})`,
+    },
+    {
+      match: exact("/sign-in/social"),
+      message: (ctx) => {
+        const provider = ctx.body?.["provider"] ?? "unknown";
+        return `Failed sign-in via ${provider} for ${bodyEmail(ctx)} (${errorCode(ctx)})`;
+      },
+    },
+    {
+      match: (path) => path.startsWith("/callback/"),
+      message: (ctx) => {
+        const provider = ctx.path.replace("/callback/", "");
+        return `OAuth callback failed for ${provider} (${errorCode(ctx)})`;
+      },
+    },
+    {
+      match: exact("/sign-up/email"),
+      message: (ctx) => `Failed sign-up attempt for ${bodyEmail(ctx)} (${errorCode(ctx)})`,
+    },
+    {
+      match: exact("/verify-password"),
+      message: (ctx) => `${userLabel(ctx)} failed password verification (${errorCode(ctx)})`,
+    },
+    {
+      match: exact("/forget-password"),
+      message: (ctx) => `Password reset requested for non-existent ${bodyEmail(ctx)} (${errorCode(ctx)})`,
+    },
+    {
+      match: exact("/reset-password"),
+      message: (ctx) => `Failed password reset — invalid or expired token (${errorCode(ctx)})`,
+    },
+    {
+      match: exact("/verify-email"),
+      message: (ctx) => `Failed email verification — invalid or expired token (${errorCode(ctx)})`,
     },
   ],
 };

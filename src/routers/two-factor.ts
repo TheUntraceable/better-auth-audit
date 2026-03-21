@@ -11,6 +11,10 @@ function exact(target: string) {
   return (path: string) => path === target;
 }
 
+function errorCode(ctx: MessageContext): string {
+  return ctx.errorCode ?? "UNKNOWN_ERROR";
+}
+
 export const twoFactorRouter: AuditRouter = {
   id: "two-factor",
   routes: [
@@ -45,6 +49,24 @@ export const twoFactorRouter: AuditRouter = {
     {
       match: exact("/two-factor/generate-backup-codes"),
       message: (ctx) => `${userLabel(ctx)} generated new backup codes`,
+    },
+  ],
+  failureRoutes: [
+    {
+      match: exact("/two-factor/verify-totp"),
+      message: (ctx) => `${userLabel(ctx)} failed TOTP verification (${errorCode(ctx)})`,
+    },
+    {
+      match: exact("/two-factor/verify-otp"),
+      message: (ctx) => `${userLabel(ctx)} failed OTP verification (${errorCode(ctx)})`,
+    },
+    {
+      match: exact("/two-factor/verify-backup-code"),
+      message: (ctx) => `${userLabel(ctx)} failed backup code verification (${errorCode(ctx)})`,
+    },
+    {
+      match: exact("/two-factor/send-otp"),
+      message: (ctx) => `${userLabel(ctx)} failed to send 2FA OTP — rate limited (${errorCode(ctx)})`,
     },
   ],
 };

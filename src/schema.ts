@@ -32,6 +32,15 @@ export const schema = {
         type: "json",
         required: false,
       },
+      success: {
+        type: "boolean",
+        required: true,
+        input: false,
+      },
+      errorCode: {
+        type: "string",
+        required: false,
+      },
     },
   },
 } satisfies PluginSchema;

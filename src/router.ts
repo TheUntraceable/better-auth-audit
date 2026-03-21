@@ -1,10 +1,38 @@
 import type { AuditLogOptions, AuditRouteHandler, AuditRouter } from "./types";
-import { baseRouter, twoFactorRouter } from "./routers";
+import {
+  baseRouter,
+  twoFactorRouter,
+  adminRouter,
+  organizationRouter,
+  passkeyRouter,
+  magicLinkRouter,
+  usernameRouter,
+  anonymousRouter,
+  phoneNumberRouter,
+  apiKeyRouter,
+  oneTimeTokenRouter,
+  multiSessionRouter,
+} from "./routers";
 
 /** All built-in routers keyed by id */
 const builtinRouters: Record<string, AuditRouter> = {
   [baseRouter.id]: baseRouter,
   [twoFactorRouter.id]: twoFactorRouter,
+  [adminRouter.id]: adminRouter,
+  [organizationRouter.id]: organizationRouter,
+  [passkeyRouter.id]: passkeyRouter,
+  [magicLinkRouter.id]: magicLinkRouter,
+  [usernameRouter.id]: usernameRouter,
+  [anonymousRouter.id]: anonymousRouter,
+  [phoneNumberRouter.id]: phoneNumberRouter,
+  [apiKeyRouter.id]: apiKeyRouter,
+  [oneTimeTokenRouter.id]: oneTimeTokenRouter,
+  [multiSessionRouter.id]: multiSessionRouter,
+};
+
+type ResolvedRoutes = {
+  success: AuditRouteHandler[];
+  failure: AuditRouteHandler[];
 };
 
 /**
@@ -14,8 +42,9 @@ const builtinRouters: Record<string, AuditRouter> = {
 export function resolveRoutes(
   options: AuditLogOptions,
   installedPluginIds: string[],
-): AuditRouteHandler[] {
+): ResolvedRoutes {
   const overrides = options.routers ?? {};
+  const logFailures = options.logFailures !== false; // defaults to true
 
   const activeRouters: AuditRouter[] = [];
 
@@ -47,5 +76,10 @@ export function resolveRoutes(
     }
   }
 
-  return activeRouters.flatMap((r) => r.routes);
+  return {
+    success: activeRouters.flatMap((r) => r.routes),
+    failure: logFailures
+      ? activeRouters.flatMap((r) => r.failureRoutes ?? [])
+      : [],
+  };
 }

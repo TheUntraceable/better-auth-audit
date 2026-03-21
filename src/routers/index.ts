@@ -1,2 +1,12 @@
 export { baseRouter } from "./base";
 export { twoFactorRouter } from "./two-factor";
+export { adminRouter } from "./admin";
+export { organizationRouter } from "./organization";
+export { passkeyRouter } from "./passkey";
+export { magicLinkRouter } from "./magic-link";
+export { usernameRouter } from "./username";
+export { anonymousRouter } from "./anonymous";
+export { phoneNumberRouter } from "./phone-number";
+export { apiKeyRouter } from "./api-key";
+export { oneTimeTokenRouter } from "./one-time-token";
+export { multiSessionRouter } from "./multi-session";

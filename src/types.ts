@@ -5,6 +5,8 @@ export type MessageContext = {
   body?: Record<string, unknown>;
   /** The endpoint's returned data, if available */
   response?: unknown;
+  /** Error code from APIError, if this is a failure event */
+  errorCode?: string;
   /** User info from session, if available */
   user?: { id: string; email?: string; name?: string };
   /** Request headers */
@@ -19,6 +21,7 @@ export type AuditRouteHandler = {
 export type AuditRouter = {
   id: string;
   routes: AuditRouteHandler[];
+  failureRoutes?: AuditRouteHandler[];
 };
 
 export type AuditLogOptions = {
@@ -39,4 +42,10 @@ export type AuditLogOptions = {
    * Defaults to ["admin"].
    */
   adminRoles?: string[];
+
+  /**
+   * Log failed auth attempts (e.g. wrong password, invalid 2FA code).
+   * Defaults to true.
+   */
+  logFailures?: boolean;
 };

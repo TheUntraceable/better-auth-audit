@@ -7,7 +7,7 @@ import {
 import * as z from "zod";
 import { schema } from "./schema";
 import { resolveRoutes } from "./router";
-import type { AuditLogOptions, MessageContext } from "./types";
+import type { AuditLogOptions, AuditRouteHandler, MessageContext } from "./types";
 
 export type { AuditLogOptions, AuditRouter, AuditRouteHandler, MessageContext } from "./types";
 
@@ -27,15 +27,61 @@ function getEndpointResponse(ctx: { context: { returned?: unknown } }) {
     return null; // can't synchronously read — skip for error responses
   }
   if (typeof returned === "object" && returned !== null && "statusCode" in returned) {
-    return null; // API error
+    return null; // API error — handled by failure routes instead
   }
   return returned;
+}
+
+function getApiError(ctx: {
+  context: { returned?: unknown };
+}): { errorCode: string | null } | null {
+  const returned = ctx.context.returned;
+  if (!returned) return null;
+  if (returned instanceof Response) return null;
+  if (
+    typeof returned === "object" &&
+    returned !== null &&
+    "statusCode" in returned &&
+    "body" in returned
+  ) {
+    const body = (returned as Record<string, unknown>).body;
+    const code =
+      typeof body === "object" && body !== null && "code" in body
+        ? (body as Record<string, unknown>).code
+        : null;
+    return { errorCode: typeof code === "string" ? code : "UNKNOWN" };
+  }
+  return null;
+}
+
+function writeAuditEntry(ctx: Record<string, any>, data: {
+  message: string;
+  success: boolean;
+  errorCode?: string | null;
+}) {
+  const session = ctx.context?.session ?? ctx.context?.newSession;
+  const userId = session?.user?.id;
+
+  return ctx.context.adapter.create({
+    model: "auditLog",
+    data: {
+      userId: userId ?? null,
+      message: data.message,
+      endpoint: ctx.path,
+      ipAddress: getIpFromHeaders(ctx.headers),
+      userAgent: ctx.headers?.get("user-agent") ?? null,
+      metadata: ctx.body ? JSON.stringify(ctx.body) : null,
+      success: data.success,
+      errorCode: data.errorCode ?? null,
+    },
+  });
 }
 
 export const auditLog = (options: AuditLogOptions = {}) => {
   const adminRoles = options.adminRoles ?? ["admin"];
 
-  let routes: ReturnType<typeof resolveRoutes> = [];
+  let successRoutes: AuditRouteHandler[] = [];
+  let failureRoutes: AuditRouteHandler[] = [];
 
   return {
     id: "audit-log",
@@ -46,7 +92,9 @@ export const auditLog = (options: AuditLogOptions = {}) => {
       const installedPluginIds = (ctx.options.plugins ?? []).map(
         (p) => p.id,
       );
-      routes = resolveRoutes(options, installedPluginIds);
+      const resolved = resolveRoutes(options, installedPluginIds);
+      successRoutes = resolved.success;
+      failureRoutes = resolved.failure;
     },
 
     hooks: {
@@ -59,43 +107,62 @@ export const auditLog = (options: AuditLogOptions = {}) => {
             const path: string | undefined = ctx.path;
             if (!path) return;
 
-            // Find a matching route handler
-            const handler = routes.find((r) => r.match(path));
-            if (!handler) return;
+            const apiError = getApiError(ctx);
 
-            // Build message context
-            const session = ctx.context.session ?? ctx.context.newSession;
-            const user = session?.user as
-              | { id: string; email?: string; name?: string }
-              | undefined;
+            if (apiError) {
+              // This is a failure — find a matching failure route
+              const handler = failureRoutes.find((r) => r.match(path));
+              if (!handler) return;
 
-            const response = getEndpointResponse(ctx);
+              const session = ctx.context.session ?? ctx.context.newSession;
+              const user = session?.user as
+                | { id: string; email?: string; name?: string }
+                | undefined;
 
-            const msgCtx: MessageContext = {
-              path,
-              body: ctx.body as Record<string, unknown> | undefined,
-              response: response ?? undefined,
-              user,
-              headers: ctx.headers as Headers | undefined,
-            };
+              const msgCtx: MessageContext = {
+                path,
+                body: ctx.body as Record<string, unknown> | undefined,
+                errorCode: apiError.errorCode ?? undefined,
+                user,
+                headers: ctx.headers as Headers | undefined,
+              };
 
-            const message = handler.message(msgCtx);
-            if (!message) return;
+              const message = handler.message(msgCtx);
+              if (!message) return;
 
-            // Write audit log entry
-            await ctx.context.adapter.create({
-              model: "auditLog",
-              data: {
-                userId: user?.id ?? null,
+              await writeAuditEntry(ctx, {
                 message,
-                endpoint: path,
-                ipAddress: getIpFromHeaders(ctx.headers as Headers | undefined),
-                userAgent:
-                  (ctx.headers as Headers | undefined)?.get("user-agent") ??
-                  null,
-                metadata: ctx.body ? JSON.stringify(ctx.body) : null,
-              },
-            });
+                success: false,
+                errorCode: apiError.errorCode,
+              });
+            } else {
+              // This is a success — find a matching success route
+              const handler = successRoutes.find((r) => r.match(path));
+              if (!handler) return;
+
+              const session = ctx.context.session ?? ctx.context.newSession;
+              const user = session?.user as
+                | { id: string; email?: string; name?: string }
+                | undefined;
+
+              const response = getEndpointResponse(ctx);
+
+              const msgCtx: MessageContext = {
+                path,
+                body: ctx.body as Record<string, unknown> | undefined,
+                response: response ?? undefined,
+                user,
+                headers: ctx.headers as Headers | undefined,
+              };
+
+              const message = handler.message(msgCtx);
+              if (!message) return;
+
+              await writeAuditEntry(ctx, {
+                message,
+                success: true,
+              });
+            }
           }),
         },
       ],
