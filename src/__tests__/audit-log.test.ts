@@ -313,7 +313,7 @@ describe("audit log plugin", () => {
       expect(failureLog!.errorCode!.length).toBeGreaterThan(0);
     });
 
-    it("should store metadata with request body", async () => {
+    it("should not store request body in metadata", async () => {
       await client.signIn.email({
         email: testUser.email,
         password: testUser.password,
@@ -328,13 +328,7 @@ describe("audit log plugin", () => {
 
       expect(logs.length).toBe(1);
       const entry = logs[0]!;
-      expect(entry.metadata).toBeTruthy();
-
-      // SQLite stores JSON as object, other DBs as string
-      const meta = typeof entry.metadata === "string"
-        ? JSON.parse(entry.metadata as string)
-        : entry.metadata;
-      expect((meta as Record<string, unknown>).email).toBe(testUser.email);
+      expect(entry.metadata).toBeNull();
     });
   });
 });

@@ -4,6 +4,7 @@ import {
   createAuthMiddleware,
   getSessionFromCtx,
 } from "better-auth/api";
+import { APIError } from "better-auth";
 import * as z from "zod";
 import { schema } from "./schema";
 import { resolveRoutes } from "./router";
@@ -70,7 +71,7 @@ function writeAuditEntry(ctx: Record<string, any>, data: {
       endpoint: ctx.path,
       ipAddress: getIpFromHeaders(ctx.headers),
       userAgent: ctx.headers?.get("user-agent") ?? null,
-      metadata: ctx.body ? JSON.stringify(ctx.body) : null,
+      metadata: null,
       success: data.success,
       errorCode: data.errorCode ?? null,
       createdAt: new Date(),
@@ -135,7 +136,7 @@ export const auditLog = (options: AuditLogOptions = {}) => {
                 message,
                 success: false,
                 errorCode: apiError.errorCode,
-              });
+              }).catch(() => {});
             } else {
               // This is a success — find a matching success route
               const handler = successRoutes.find((r) => r.match(path));
@@ -162,7 +163,7 @@ export const auditLog = (options: AuditLogOptions = {}) => {
               await writeAuditEntry(ctx, {
                 message,
                 success: true,
-              });
+              }).catch(() => {});
             }
           }),
         },
@@ -205,7 +206,9 @@ export const auditLog = (options: AuditLogOptions = {}) => {
         async (ctx) => {
           const session = await getSessionFromCtx(ctx);
           if (!session) {
-            throw new Error("Unauthorized");
+            throw new APIError("UNAUTHORIZED", {
+              message: "Unauthorized",
+            });
           }
 
           const currentUser = session.user as {
