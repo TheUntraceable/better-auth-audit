@@ -1,6 +1,6 @@
 {
   "name": "better-auth-audit",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Audit log plugin for Better Auth",
   "type": "module",
   "main": "./dist/index.cjs",
