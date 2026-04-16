@@ -60,8 +60,7 @@ export const adminRouter: AuditRouter = {
     {
       match: exact("/admin/revoke-user-session"),
       message: (ctx) => {
-        const token = ctx.body?.["sessionToken"];
-        return `${userLabel(ctx)} revoked session ${token}`;
+        return `${userLabel(ctx)} revoked a user session`;
       },
     },
     {

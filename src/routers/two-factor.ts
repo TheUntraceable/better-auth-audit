@@ -36,6 +36,10 @@ export const twoFactorRouter: AuditRouter = {
       match: exact("/two-factor/generate-backup-codes"),
       message: (ctx) => `${userLabel(ctx)} generated new backup codes`,
     },
+    {
+      match: exact("/two-factor/view-backup-codes"),
+      message: (ctx) => `${userLabel(ctx)} viewed backup codes`,
+    },
   ],
   failureRoutes: [
     {

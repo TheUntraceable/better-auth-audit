@@ -59,7 +59,7 @@ Each audit log entry contains:
 | `endpoint`  | The endpoint path (e.g. `/sign-in/email`)|
 | `ipAddress` | Extracted from `x-forwarded-for` / `x-real-ip` |
 | `userAgent` | From the request headers                 |
-| `metadata`  | Raw request body as JSON                 |
+| `metadata`  | Reserved for future use (always `null`)  |
 | `success`   | `true` for successful actions, `false` for failures |
 | `errorCode` | The error code from `APIError` (e.g. `INVALID_PASSWORD`) — only set on failures |
 

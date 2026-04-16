@@ -190,7 +190,7 @@ export const auditLog = (options: AuditLogOptions = {}) => {
         {
           method: "GET",
           query: z.object({
-            limit: z.coerce.number().optional().default(50),
+            limit: z.coerce.number().optional().default(50).pipe(z.number().max(200)),
             offset: z.coerce.number().optional().default(0),
             userId: z.string().optional(),
           }),

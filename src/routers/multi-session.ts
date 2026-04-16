@@ -10,10 +10,7 @@ export const multiSessionRouter: AuditRouter = {
     },
     {
       match: exact("/multi-session/revoke"),
-      message: (ctx) => {
-        const token = ctx.body?.["sessionToken"];
-        return `Revoked device session ${token}`;
-      },
+      message: () => `Revoked a device session`,
     },
   ],
   failureRoutes: [

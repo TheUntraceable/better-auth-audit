@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { admin, testUtils } from "better-auth/plugins";
 import { getTestInstance } from "better-auth/test";
-import { testUtils, admin } from "better-auth/plugins";
-import { auditLog } from "../index";
+import { beforeAll, describe, expect, it } from "vitest";
 import { auditLogClient } from "../client";
+import { auditLog } from "../index";
 
 interface AuditLogEntry {
   id: string;
@@ -128,7 +128,7 @@ describe("audit log plugin", () => {
           email: testUser.email,
           password: "wrong-password",
         })
-        .catch(() => {});
+        .catch(() => { });
 
       const logs = (await ctx.adapter.findMany({
         model: "auditLog",
@@ -152,7 +152,7 @@ describe("audit log plugin", () => {
           password: "password123",
           name: "Duplicate",
         })
-        .catch(() => {});
+        .catch(() => { });
 
       const logs = (await ctx.adapter.findMany({
         model: "auditLog",
@@ -188,7 +188,7 @@ describe("audit log plugin", () => {
         .signInEmail({
           body: { email: "nobody@example.com", password: "wrong" },
         })
-        .catch(() => {});
+        .catch(() => { });
 
       const after = await ctxNoFail.adapter.findMany({
         model: "auditLog",
@@ -298,7 +298,7 @@ describe("audit log plugin", () => {
           email: testUser.email,
           password: "definitely-wrong",
         })
-        .catch(() => {});
+        .catch(() => { });
 
       const logs = (await ctx.adapter.findMany({
         model: "auditLog",

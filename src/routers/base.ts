@@ -44,12 +44,7 @@ export const baseRouter: AuditRouter = {
     },
     {
       match: exact("/change-email"),
-      message: (ctx) => {
-        const newEmail = ctx.body?.["newEmail"];
-        return typeof newEmail === "string"
-          ? `${userLabel(ctx)} changed their email to ${newEmail}`
-          : `${userLabel(ctx)} changed their email`;
-      },
+      message: (ctx) => `${userLabel(ctx)} changed their email`,
     },
     {
       match: exact("/change-password"),
@@ -95,6 +90,20 @@ export const baseRouter: AuditRouter = {
       match: exact("/update-session"),
       message: (ctx) => `${userLabel(ctx)} updated session data`,
     },
+    {
+      match: exact("/link-social"),
+      message: (ctx) => {
+        const provider = ctx.body?.["provider"] ?? "unknown";
+        return `${userLabel(ctx)} linked ${provider} account`;
+      },
+    },
+    {
+      match: exact("/unlink-account"),
+      message: (ctx) => {
+        const providerId = ctx.body?.["providerId"] ?? "unknown";
+        return `${userLabel(ctx)} unlinked ${providerId} account`;
+      },
+    },
   ],
   failureRoutes: [
     {
@@ -134,6 +143,20 @@ export const baseRouter: AuditRouter = {
     {
       match: exact("/verify-email"),
       message: (ctx) => `Email verification failed — ${describeError(ctx.errorCode)}`,
+    },
+    {
+      match: exact("/link-social"),
+      message: (ctx) => {
+        const provider = ctx.body?.["provider"] ?? "unknown";
+        return `${userLabel(ctx)} failed to link ${provider} account — ${describeError(ctx.errorCode)}`;
+      },
+    },
+    {
+      match: exact("/unlink-account"),
+      message: (ctx) => {
+        const providerId = ctx.body?.["providerId"] ?? "unknown";
+        return `${userLabel(ctx)} failed to unlink ${providerId} account — ${describeError(ctx.errorCode)}`;
+      },
     },
   ],
 };

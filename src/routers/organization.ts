@@ -77,6 +77,79 @@ export const organizationRouter: AuditRouter = {
         return `${userLabel(ctx)} left organization ${orgId}`;
       },
     },
+    {
+      match: exact("/organization/add-member"),
+      message: (ctx) => {
+        const userId = ctx.body?.["userId"];
+        const role = ctx.body?.["role"];
+        return `${userLabel(ctx)} added user ${userId} as ${role ?? "member"}`;
+      },
+    },
+    {
+      match: exact("/organization/create-team"),
+      message: (ctx) => {
+        const name = ctx.body?.["name"];
+        return `${userLabel(ctx)} created team "${name}"`;
+      },
+    },
+    {
+      match: exact("/organization/update-team"),
+      message: (ctx) => {
+        const teamId = ctx.body?.["teamId"];
+        return `${userLabel(ctx)} updated team ${teamId}`;
+      },
+    },
+    {
+      match: exact("/organization/remove-team"),
+      message: (ctx) => {
+        const teamId = ctx.body?.["teamId"];
+        return `${userLabel(ctx)} removed team ${teamId}`;
+      },
+    },
+    {
+      match: exact("/organization/add-team-member"),
+      message: (ctx) => {
+        const userId = ctx.body?.["userId"];
+        const teamId = ctx.body?.["teamId"];
+        return `${userLabel(ctx)} added user ${userId} to team ${teamId}`;
+      },
+    },
+    {
+      match: exact("/organization/remove-team-member"),
+      message: (ctx) => {
+        const userId = ctx.body?.["userId"];
+        const teamId = ctx.body?.["teamId"];
+        return `${userLabel(ctx)} removed user ${userId} from team ${teamId}`;
+      },
+    },
+    {
+      match: exact("/organization/set-active-team"),
+      message: (ctx) => {
+        const teamId = ctx.body?.["teamId"];
+        return `${userLabel(ctx)} switched to team ${teamId}`;
+      },
+    },
+    {
+      match: exact("/organization/create-role"),
+      message: (ctx) => {
+        const roleName = ctx.body?.["roleName"];
+        return `${userLabel(ctx)} created organization role "${roleName}"`;
+      },
+    },
+    {
+      match: exact("/organization/update-role"),
+      message: (ctx) => {
+        const roleId = ctx.body?.["roleId"];
+        return `${userLabel(ctx)} updated organization role ${roleId}`;
+      },
+    },
+    {
+      match: exact("/organization/delete-role"),
+      message: (ctx) => {
+        const roleId = ctx.body?.["roleId"];
+        return `${userLabel(ctx)} deleted organization role ${roleId}`;
+      },
+    },
   ],
   failureRoutes: [
     {
@@ -104,6 +177,43 @@ export const organizationRouter: AuditRouter = {
     {
       match: exact("/organization/update-member-role"),
       message: (ctx) => `${userLabel(ctx)} failed to update member role — ${describeError(ctx.errorCode)}`,
+    },
+    {
+      match: exact("/organization/add-member"),
+      message: (ctx) => {
+        const userId = ctx.body?.["userId"];
+        return `${userLabel(ctx)} failed to add user ${userId} — ${describeError(ctx.errorCode)}`;
+      },
+    },
+    {
+      match: exact("/organization/create-team"),
+      message: (ctx) => `${userLabel(ctx)} failed to create team — ${describeError(ctx.errorCode)}`,
+    },
+    {
+      match: exact("/organization/remove-team"),
+      message: (ctx) => {
+        const teamId = ctx.body?.["teamId"];
+        return `${userLabel(ctx)} failed to remove team ${teamId} — ${describeError(ctx.errorCode)}`;
+      },
+    },
+    {
+      match: exact("/organization/add-team-member"),
+      message: (ctx) => `${userLabel(ctx)} failed to add team member — ${describeError(ctx.errorCode)}`,
+    },
+    {
+      match: exact("/organization/remove-team-member"),
+      message: (ctx) => `${userLabel(ctx)} failed to remove team member — ${describeError(ctx.errorCode)}`,
+    },
+    {
+      match: exact("/organization/create-role"),
+      message: (ctx) => `${userLabel(ctx)} failed to create organization role — ${describeError(ctx.errorCode)}`,
+    },
+    {
+      match: exact("/organization/delete-role"),
+      message: (ctx) => {
+        const roleId = ctx.body?.["roleId"];
+        return `${userLabel(ctx)} failed to delete organization role ${roleId} — ${describeError(ctx.errorCode)}`;
+      },
     },
   ],
 };
