@@ -122,12 +122,12 @@ auditLog({
 
 ```ts
 // Client-side: fetch your own logs
-const logs = await authClient.auditLog.getAuditLogs({
+const logs = await authClient.auditLog.logs({
   query: { limit: 25, offset: 0 },
 });
 
 // Admins can fetch all logs or filter by user
-const logs = await authClient.auditLog.getAuditLogs({
+const logs = await authClient.auditLog.logs({
   query: { userId: "some-user-id" },
 });
 ```

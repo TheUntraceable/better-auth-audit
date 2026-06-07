@@ -69,7 +69,7 @@ function writeAuditEntry(ctx: Record<string, any>, data: {
       userId: userId ?? null,
       message: data.message,
       endpoint: ctx.path,
-      ipAddress: getIpFromHeaders(ctx.headers),
+      ipAddress: getIpFromHeaders(ctx.headers) ?? null,
       userAgent: ctx.headers?.get("user-agent") ?? null,
       metadata: null,
       success: data.success,
