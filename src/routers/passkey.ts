@@ -1,5 +1,5 @@
 import type { AuditRouter } from "../types";
-import { userLabel, exact, describeError } from "./utils";
+import { userLabel, exact, fromBody, describeError } from "./utils";
 
 export const passkeyRouter: AuditRouter = {
   id: "passkey",
@@ -16,6 +16,7 @@ export const passkeyRouter: AuditRouter = {
           ? `${userLabel(ctx)} registered passkey "${name}"`
           : `${userLabel(ctx)} registered a new passkey`;
       },
+      metadata: fromBody("name"),
     },
     {
       match: exact("/passkey/delete-passkey"),
@@ -23,6 +24,7 @@ export const passkeyRouter: AuditRouter = {
         const id = ctx.body?.["id"];
         return `${userLabel(ctx)} deleted passkey ${id}`;
       },
+      metadata: fromBody("id"),
     },
     {
       match: exact("/passkey/update-passkey"),
@@ -31,6 +33,7 @@ export const passkeyRouter: AuditRouter = {
         const name = ctx.body?.["name"];
         return `${userLabel(ctx)} renamed passkey ${id} to "${name}"`;
       },
+      metadata: fromBody("id", "name"),
     },
   ],
   failureRoutes: [

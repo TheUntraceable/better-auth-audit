@@ -1,5 +1,5 @@
 import type { AuditRouter } from "../types";
-import { userLabel, exact, describeError } from "./utils";
+import { userLabel, exact, fromBody, describeError } from "./utils";
 
 export const apiKeyRouter: AuditRouter = {
   id: "api-key",
@@ -12,6 +12,7 @@ export const apiKeyRouter: AuditRouter = {
           ? `${userLabel(ctx)} created API key "${name}"`
           : `${userLabel(ctx)} created an API key`;
       },
+      metadata: fromBody("name", "prefix"),
     },
     {
       match: exact("/api-key/update"),
@@ -19,6 +20,7 @@ export const apiKeyRouter: AuditRouter = {
         const keyId = ctx.body?.["keyId"];
         return `${userLabel(ctx)} updated API key ${keyId}`;
       },
+      metadata: fromBody("keyId", "name"),
     },
     {
       match: exact("/api-key/delete"),
@@ -26,6 +28,7 @@ export const apiKeyRouter: AuditRouter = {
         const keyId = ctx.body?.["keyId"];
         return `${userLabel(ctx)} deleted API key ${keyId}`;
       },
+      metadata: fromBody("keyId"),
     },
   ],
   failureRoutes: [

@@ -1,5 +1,5 @@
 import type { AuditRouter, MessageContext } from "../types";
-import { userLabel, bodyEmail, exact, describeError } from "./utils";
+import { userLabel, bodyEmail, exact, fromBody, describeError } from "./utils";
 
 export const baseRouter: AuditRouter = {
   id: "base",
@@ -14,6 +14,7 @@ export const baseRouter: AuditRouter = {
         const provider = ctx.body?.["provider"] ?? "unknown";
         return `${bodyEmail(ctx)} signed in via ${provider}`;
       },
+      metadata: fromBody("provider"),
     },
     {
       match: (path) => path.startsWith("/callback/"),
@@ -21,6 +22,7 @@ export const baseRouter: AuditRouter = {
         const provider = ctx.path.replace("/callback/", "");
         return `${userLabel(ctx)} completed OAuth callback for ${provider}`;
       },
+      metadata: (ctx) => ({ provider: ctx.path.replace("/callback/", "") }),
     },
     {
       match: exact("/sign-up/email"),
@@ -96,6 +98,7 @@ export const baseRouter: AuditRouter = {
         const provider = ctx.body?.["provider"] ?? "unknown";
         return `${userLabel(ctx)} linked ${provider} account`;
       },
+      metadata: fromBody("provider"),
     },
     {
       match: exact("/unlink-account"),
@@ -103,6 +106,7 @@ export const baseRouter: AuditRouter = {
         const providerId = ctx.body?.["providerId"] ?? "unknown";
         return `${userLabel(ctx)} unlinked ${providerId} account`;
       },
+      metadata: fromBody("providerId", "accountId"),
     },
   ],
   failureRoutes: [
@@ -116,6 +120,7 @@ export const baseRouter: AuditRouter = {
         const provider = ctx.body?.["provider"] ?? "unknown";
         return `Failed sign-in via ${provider} for ${bodyEmail(ctx)} — ${describeError(ctx.errorCode)}`;
       },
+      metadata: fromBody("provider"),
     },
     {
       match: (path) => path.startsWith("/callback/"),
@@ -123,6 +128,7 @@ export const baseRouter: AuditRouter = {
         const provider = ctx.path.replace("/callback/", "");
         return `OAuth callback failed for ${provider} — ${describeError(ctx.errorCode)}`;
       },
+      metadata: (ctx) => ({ provider: ctx.path.replace("/callback/", "") }),
     },
     {
       match: exact("/sign-up/email"),
@@ -150,6 +156,7 @@ export const baseRouter: AuditRouter = {
         const provider = ctx.body?.["provider"] ?? "unknown";
         return `${userLabel(ctx)} failed to link ${provider} account — ${describeError(ctx.errorCode)}`;
       },
+      metadata: fromBody("provider"),
     },
     {
       match: exact("/unlink-account"),
@@ -157,6 +164,7 @@ export const baseRouter: AuditRouter = {
         const providerId = ctx.body?.["providerId"] ?? "unknown";
         return `${userLabel(ctx)} failed to unlink ${providerId} account — ${describeError(ctx.errorCode)}`;
       },
+      metadata: fromBody("providerId", "accountId"),
     },
   ],
 };

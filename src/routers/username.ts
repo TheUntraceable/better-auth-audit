@@ -1,5 +1,5 @@
 import type { AuditRouter } from "../types";
-import { userLabel, exact, describeError } from "./utils";
+import { userLabel, exact, fromBody, describeError } from "./utils";
 
 export const usernameRouter: AuditRouter = {
   id: "username",
@@ -12,6 +12,7 @@ export const usernameRouter: AuditRouter = {
           ? `${username} signed in via username`
           : `User signed in via username`;
       },
+      metadata: fromBody("username"),
     },
   ],
   failureRoutes: [
@@ -23,6 +24,7 @@ export const usernameRouter: AuditRouter = {
           ? `Failed sign-in for username "${username}" — ${describeError(ctx.errorCode)}`
           : `Failed username sign-in — ${describeError(ctx.errorCode)}`;
       },
+      metadata: fromBody("username"),
     },
   ],
 };

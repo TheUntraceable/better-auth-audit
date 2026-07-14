@@ -1,5 +1,5 @@
 import type { AuditRouter } from "../types";
-import { userLabel, bodyEmail, exact, describeError } from "./utils";
+import { userLabel, bodyEmail, exact, fromBody, describeError } from "./utils";
 
 export const adminRouter: AuditRouter = {
   id: "admin",
@@ -7,6 +7,7 @@ export const adminRouter: AuditRouter = {
     {
       match: exact("/admin/create-user"),
       message: (ctx) => `${userLabel(ctx)} created user ${bodyEmail(ctx)}`,
+      metadata: fromBody("email", "role"),
     },
     {
       match: exact("/admin/set-role"),
@@ -15,6 +16,7 @@ export const adminRouter: AuditRouter = {
         const role = ctx.body?.["role"];
         return `${userLabel(ctx)} set role "${role}" for user ${userId}`;
       },
+      metadata: fromBody("userId", "role"),
     },
     {
       match: exact("/admin/set-user-password"),
@@ -22,6 +24,7 @@ export const adminRouter: AuditRouter = {
         const userId = ctx.body?.["userId"];
         return `${userLabel(ctx)} set password for user ${userId}`;
       },
+      metadata: fromBody("userId"),
     },
     {
       match: exact("/admin/update-user"),
@@ -31,6 +34,7 @@ export const adminRouter: AuditRouter = {
           : ctx.body?.["userId"];
         return `${userLabel(ctx)} updated user ${userId}`;
       },
+      metadata: fromBody("userId"),
     },
     {
       match: exact("/admin/ban-user"),
@@ -38,6 +42,7 @@ export const adminRouter: AuditRouter = {
         const userId = ctx.body?.["userId"];
         return `${userLabel(ctx)} banned user ${userId}`;
       },
+      metadata: fromBody("userId", "banReason", "banExpiresIn"),
     },
     {
       match: exact("/admin/unban-user"),
@@ -45,6 +50,7 @@ export const adminRouter: AuditRouter = {
         const userId = ctx.body?.["userId"];
         return `${userLabel(ctx)} unbanned user ${userId}`;
       },
+      metadata: fromBody("userId"),
     },
     {
       match: exact("/admin/impersonate-user"),
@@ -52,6 +58,7 @@ export const adminRouter: AuditRouter = {
         const userId = ctx.body?.["userId"];
         return `${userLabel(ctx)} started impersonating user ${userId}`;
       },
+      metadata: fromBody("userId"),
     },
     {
       match: exact("/admin/stop-impersonating"),
@@ -69,6 +76,7 @@ export const adminRouter: AuditRouter = {
         const userId = ctx.body?.["userId"];
         return `${userLabel(ctx)} revoked all sessions for user ${userId}`;
       },
+      metadata: fromBody("userId"),
     },
     {
       match: exact("/admin/remove-user"),
@@ -76,16 +84,19 @@ export const adminRouter: AuditRouter = {
         const userId = ctx.body?.["userId"];
         return `${userLabel(ctx)} removed user ${userId}`;
       },
+      metadata: fromBody("userId"),
     },
   ],
   failureRoutes: [
     {
       match: exact("/admin/create-user"),
       message: (ctx) => `${userLabel(ctx)} failed to create user ${bodyEmail(ctx)} — ${describeError(ctx.errorCode)}`,
+      metadata: fromBody("email", "role"),
     },
     {
       match: exact("/admin/set-role"),
       message: (ctx) => `${userLabel(ctx)} failed to set role — ${describeError(ctx.errorCode)}`,
+      metadata: fromBody("userId", "role"),
     },
     {
       match: exact("/admin/ban-user"),
@@ -93,6 +104,7 @@ export const adminRouter: AuditRouter = {
         const userId = ctx.body?.["userId"];
         return `${userLabel(ctx)} failed to ban user ${userId} — ${describeError(ctx.errorCode)}`;
       },
+      metadata: fromBody("userId"),
     },
     {
       match: exact("/admin/unban-user"),
@@ -100,6 +112,7 @@ export const adminRouter: AuditRouter = {
         const userId = ctx.body?.["userId"];
         return `${userLabel(ctx)} failed to unban user ${userId} — ${describeError(ctx.errorCode)}`;
       },
+      metadata: fromBody("userId"),
     },
     {
       match: exact("/admin/impersonate-user"),
@@ -107,6 +120,7 @@ export const adminRouter: AuditRouter = {
         const userId = ctx.body?.["userId"];
         return `${userLabel(ctx)} failed to impersonate user ${userId} — ${describeError(ctx.errorCode)}`;
       },
+      metadata: fromBody("userId"),
     },
     {
       match: exact("/admin/revoke-user-sessions"),
@@ -114,6 +128,7 @@ export const adminRouter: AuditRouter = {
         const userId = ctx.body?.["userId"];
         return `${userLabel(ctx)} failed to revoke sessions for user ${userId} — ${describeError(ctx.errorCode)}`;
       },
+      metadata: fromBody("userId"),
     },
     {
       match: exact("/admin/remove-user"),
@@ -121,6 +136,7 @@ export const adminRouter: AuditRouter = {
         const userId = ctx.body?.["userId"];
         return `${userLabel(ctx)} failed to remove user ${userId} — ${describeError(ctx.errorCode)}`;
       },
+      metadata: fromBody("userId"),
     },
   ],
 };
