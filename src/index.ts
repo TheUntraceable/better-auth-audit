@@ -152,34 +152,37 @@ export const auditLog = (options: AuditLogOptions = {}) => {
               options.metadata,
             );
 
-            ctx.context.runInBackground(
-              ctx.context.adapter
-                .create({
-                  model: "auditLog",
-                  data: {
-                    userId: user?.id ?? null,
-                    message,
-                    endpoint: path,
-                    // Honors advanced.ipAddress config (custom headers,
-                    // disableIpTracking, IPv6 normalization).
-                    ipAddress: ctx.headers
-                      ? getIp(ctx.headers, ctx.context.options)
-                      : null,
-                    userAgent: ctx.headers?.get("user-agent") ?? null,
-                    metadata,
-                    source,
-                    success: !apiError,
-                    errorCode: apiError?.errorCode ?? null,
-                    createdAt: new Date(),
-                  },
-                })
-                .catch((err: unknown) => {
-                  ctx.context.logger.warn(
-                    "[audit-log] Failed to write audit entry:",
-                    err,
-                  );
-                }),
-            );
+            const write = ctx.context.adapter
+              .create({
+                model: "auditLog",
+                data: {
+                  userId: user?.id ?? null,
+                  message,
+                  endpoint: path,
+                  // Honors advanced.ipAddress config (custom headers,
+                  // disableIpTracking, IPv6 normalization).
+                  ipAddress: ctx.headers
+                    ? getIp(ctx.headers, ctx.context.options)
+                    : null,
+                  userAgent: ctx.headers?.get("user-agent") ?? null,
+                  metadata,
+                  source,
+                  success: !apiError,
+                  errorCode: apiError?.errorCode ?? null,
+                  createdAt: new Date(),
+                },
+              })
+              .catch((err: unknown) => {
+                ctx.context.logger.warn(
+                  "[audit-log] Failed to write audit entry:",
+                  err,
+                );
+              });
+
+            // Awaits unless advanced.backgroundTasks.handler is configured.
+            // Fire-and-forget dangles in serverless runtimes (Convex warns,
+            // Vercel may kill the write after the response is sent).
+            await ctx.context.runInBackgroundOrAwait(write);
           }),
         },
       ],
