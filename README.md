@@ -26,8 +26,12 @@ export const auth = betterAuth({
       },
       // Optional: log failed auth attempts (default: true)
       logFailures: true,
+      // Optional: log direct auth.api.* calls made on the server (default: true)
+      logServerActions: true,
       // Optional: which roles can view all logs (default: ["admin"])
       adminRoles: ["admin"],
+      // Optional: attach extra metadata to every entry
+      metadata: (ctx) => ({ region: process.env.REGION }),
     }),
   ],
 });
@@ -57,11 +61,35 @@ Each audit log entry contains:
 | `message`   | Human-readable description of the event  |
 | `userId`    | The user who performed the action        |
 | `endpoint`  | The endpoint path (e.g. `/sign-in/email`)|
-| `ipAddress` | Extracted from `x-forwarded-for` / `x-real-ip` |
+| `source`    | `"http"` for requests via `auth.handler`, `"server"` for direct `auth.api.*` calls, `"system"` for direct calls marked as automation (see below) |
+| `ipAddress` | Resolved with Better Auth's IP detection — honors your `advanced.ipAddress` config (custom headers, `disableIpTracking`, IPv6 normalization) |
 | `userAgent` | From the request headers                 |
-| `metadata`  | Reserved for future use (always `null`)  |
+| `metadata`  | Structured JSON details for the event (e.g. `provider`, target `userId`, `organizationId`) plus anything returned by your `metadata` option; `impersonatedBy` is added automatically when an admin acts while impersonating |
 | `success`   | `true` for successful actions, `false` for failures |
 | `errorCode` | The error code from `APIError` (e.g. `INVALID_PASSWORD`) — only set on failures |
+
+### Server-side actions
+
+Calls made directly on the server via `auth.api.*` are logged too — Better Auth
+runs plugin hooks for direct API calls, not just HTTP requests. These entries
+have `source: "server"`. When headers are forwarded, the entry is attributed
+to the acting user's session, so "an admin clicked a button that ran on the
+server" stays distinguishable from anonymous machine activity.
+
+```ts
+// This is audited just like an HTTP request would be:
+await auth.api.banUser({
+  body: { userId: "some-user" },
+  headers: await headers(), // pass headers to attribute the acting admin + capture IP/UA
+});
+```
+
+Two things to know:
+
+- **Pass `headers` when acting on behalf of a user.** Without them the entry has
+  no session to attribute, so `userId`, `ipAddress` and `userAgent` will be `null`.
+- **Opt out** with `logServerActions: false` if you only want user-facing HTTP
+  events (e.g. your server runs noisy batch jobs through `auth.api`).
 
 ### Covered endpoints
 
@@ -120,15 +148,30 @@ auditLog({
 
 ## Fetching Logs
 
+The endpoint returns `{ logs, total }` — `total` is the count matching your
+filters, for building pagination.
+
 ```ts
 // Client-side: fetch your own logs
-const logs = await authClient.auditLog.logs({
+const { data } = await authClient.auditLog.logs({
   query: { limit: 25, offset: 0 },
 });
+// data.logs, data.total
 
 // Admins can fetch all logs or filter by user
-const logs = await authClient.auditLog.logs({
+const { data } = await authClient.auditLog.logs({
   query: { userId: "some-user-id" },
+});
+
+// Filter by endpoint, success or source
+const { data } = await authClient.auditLog.logs({
+  query: { endpoint: "/sign-in/email", success: "false", source: "http" },
+});
+
+// Server-side, as an admin
+const { logs, total } = await auth.api.getAuditLogs({
+  query: { limit: 100 },
+  headers: await headers(),
 });
 ```
 
@@ -139,21 +182,24 @@ Tenant isolation is enforced — regular users only see their own logs. Users wi
 You can add your own routers for custom plugins:
 
 ```ts
-import { auditLog } from "better-auth-audit";
+import { auditLog, exact, fromBody, userLabel, describeError } from "better-auth-audit";
 import type { AuditRouter } from "better-auth-audit";
 
 const myRouter: AuditRouter = {
   id: "my-plugin",
   routes: [
     {
-      match: (path) => path === "/my-plugin/action",
-      message: (ctx) => `${ctx.user?.email ?? "Someone"} performed an action`,
+      match: exact("/my-plugin/action"), // exact() paths get O(1) lookup
+      message: (ctx) => `${userLabel(ctx)} performed an action`,
+      // Optional: structured details stored in the metadata column.
+      // fromBody() copies only primitive fields — never put secrets here.
+      metadata: fromBody("resourceId"),
     },
   ],
   failureRoutes: [
     {
-      match: (path) => path === "/my-plugin/action",
-      message: (ctx) => `${ctx.user?.email ?? "Someone"} failed action (${ctx.errorCode})`,
+      match: exact("/my-plugin/action"),
+      message: (ctx) => `${userLabel(ctx)} failed action — ${describeError(ctx.errorCode)}`,
     },
   ],
 };
@@ -162,6 +208,34 @@ auditLog({
   customRouters: [myRouter],
 });
 ```
+
+Route handlers receive a `MessageContext` with `path`, `body`, `response`,
+`errorCode`, `user`, `headers` and `source` (`"http"` | `"server"` |
+`"system"`). Returning `null` from `message` skips the entry.
+
+### System actions (automation)
+
+Automation — cron jobs, cleanup tasks, migrations — should self-identify by
+sending the `x-audit-system` header (exported as `AUDIT_SYSTEM_HEADER`) on its
+`auth.api.*` calls. Those entries get `source: "system"`, the header value is
+stored in metadata as `systemReason`, and messages fall back to the label
+`System` when no session is attached:
+
+```ts
+import { AUDIT_SYSTEM_HEADER } from "better-auth-audit";
+
+await auth.api.revokeUserSessions({
+  body: { userId: staleUser.id },
+  headers: new Headers({ [AUDIT_SYSTEM_HEADER]: "session-cleanup" }),
+});
+// -> source: "system", metadata: { systemReason: "session-cleanup" }
+```
+
+The marker is deliberately explicit-only. It is ignored on HTTP requests so
+clients cannot spoof it, and it is never inferred from a missing session —
+anonymous server-side auth flows (a sign-in attempt from a server action, say)
+remain `source: "server"`. One caveat follows from the HTTP-only guard: do not
+forward untrusted client headers wholesale into `auth.api.*` calls.
 
 ## License
 

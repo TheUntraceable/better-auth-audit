@@ -4,6 +4,7 @@ export function userLabel(ctx: MessageContext): string {
   if (ctx.user?.email) return ctx.user.email;
   if (ctx.user?.name) return ctx.user.name;
   if (ctx.user?.id) return `user ${ctx.user.id}`;
+  if (ctx.source === "system") return "System";
   return "Unknown user";
 }
 
@@ -17,12 +18,42 @@ export function bodyPhone(ctx: MessageContext): string {
   return typeof phone === "string" ? phone : "unknown";
 }
 
-export function exact(target: string) {
-  return (path: string) => path === target;
+/** A path matcher. When created via {@link exact} it carries the literal
+ * target on `exactPath`, allowing the resolver to index it for O(1) lookup. */
+export type PathMatcher = ((path: string) => boolean) & { exactPath?: string };
+
+export function exact(target: string): PathMatcher {
+  const match: PathMatcher = (path) => path === target;
+  match.exactPath = target;
+  return match;
 }
 
 export function errorCode(ctx: MessageContext): string {
   return ctx.errorCode ?? "UNKNOWN_ERROR";
+}
+
+/**
+ * Builds a metadata extractor that picks the given fields from the request
+ * body. Only primitive values (string/number/boolean) are copied, so nested
+ * objects and missing fields are silently skipped. Never pass fields that
+ * may hold secrets (passwords, tokens, OTP codes).
+ */
+export function fromBody(...keys: string[]) {
+  return (ctx: MessageContext): Record<string, unknown> | null => {
+    if (!ctx.body) return null;
+    const out: Record<string, unknown> = {};
+    for (const key of keys) {
+      const value = ctx.body[key];
+      if (
+        typeof value === "string" ||
+        typeof value === "number" ||
+        typeof value === "boolean"
+      ) {
+        out[key] = value;
+      }
+    }
+    return Object.keys(out).length > 0 ? out : null;
+  };
 }
 
 const ERROR_DESCRIPTIONS: Record<string, string> = {

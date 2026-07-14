@@ -32,6 +32,14 @@ export const schema = {
         type: "json",
         required: false,
       },
+      source: {
+        // "http" for requests via auth.handler, "server" for direct
+        // auth.api.* calls, "system" for direct calls marked with the
+        // x-audit-system header. Nullable so pre-existing rows stay valid.
+        type: "string",
+        required: false,
+        input: false,
+      },
       success: {
         type: "boolean",
         required: true,
