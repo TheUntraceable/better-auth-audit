@@ -1,4 +1,5 @@
-import { admin, testUtils } from "better-auth/plugins";
+import { emailOTPClient } from "better-auth/client/plugins";
+import { admin, emailOTP, testUtils } from "better-auth/plugins";
 import { getTestInstance } from "better-auth/test";
 import { beforeAll, describe, expect, it } from "vitest";
 import { auditLogClient } from "../client";
@@ -18,23 +19,31 @@ interface AuditLogEntry {
   createdAt: Date;
 }
 
-/** Audit writes are dispatched via runInBackground — give them a tick to land. */
-const flush = () => new Promise((resolve) => setTimeout(resolve, 25));
-
 function parseMetadata(entry: AuditLogEntry): Record<string, unknown> | null {
   if (entry.metadata == null) return null;
   if (typeof entry.metadata === "string") return JSON.parse(entry.metadata);
   return entry.metadata as Record<string, unknown>;
 }
 
+const emailOtps = new Map<string, string>();
+
 const { auth, client, signInWithTestUser, testUser } = await getTestInstance(
   {
-    plugins: [testUtils(), admin(), auditLog({ logFailures: true })],
+    plugins: [
+      testUtils(),
+      admin(),
+      emailOTP({
+        async sendVerificationOTP({ email, otp }) {
+          emailOtps.set(email, otp);
+        },
+      }),
+      auditLog({ logFailures: true }),
+    ],
   },
   {
     testWith: "sqlite",
     clientOptions: {
-      plugins: [auditLogClient()],
+      plugins: [emailOTPClient(), auditLogClient()],
     },
   },
 );
@@ -87,6 +96,33 @@ describe("audit log plugin", () => {
       expect(log!.message).toContain("signed up via email");
     });
 
+    it("should log sign-in via email OTP", async () => {
+      await client.emailOtp.sendVerificationOtp({
+        email: testUser.email,
+        type: "sign-in",
+      });
+      const otp = emailOtps.get(testUser.email);
+      expect(otp).toBeDefined();
+
+      await client.signIn.emailOtp({
+        email: testUser.email,
+        otp: otp!,
+      });
+
+      const logs = (await ctx.adapter.findMany({
+        model: "auditLog",
+        where: [{ field: "endpoint", value: "/sign-in/email-otp" }],
+      })) as AuditLogEntry[];
+
+      const log = logs.find(
+        (entry) =>
+          entry.success && entry.message.includes("signed in via email OTP"),
+      );
+      expect(log).toBeDefined();
+      expect(log!.message).toContain(testUser.email);
+      expect(log!.source).toBe("http");
+    });
+
     it("should log sign-out", async () => {
       const { headers } = await signInWithTestUser();
 
@@ -116,8 +152,6 @@ describe("audit log plugin", () => {
           },
         },
       });
-      await flush();
-
       const logs = (await ctx.adapter.findMany({
         model: "auditLog",
         where: [{ field: "endpoint", value: "/sign-in/email" }],
@@ -136,8 +170,6 @@ describe("audit log plugin", () => {
         email: testUser.email,
         password: testUser.password,
       });
-      await flush();
-
       const logs = (await ctx.adapter.findMany({
         model: "auditLog",
         where: [{ field: "endpoint", value: "/sign-in/email" }],
@@ -158,8 +190,6 @@ describe("audit log plugin", () => {
           name: "Server Action",
         },
       });
-      await flush();
-
       const logs = (await ctx.adapter.findMany({
         model: "auditLog",
         where: [{ field: "endpoint", value: "/sign-up/email" }],
@@ -179,8 +209,6 @@ describe("audit log plugin", () => {
           body: { email: testUser.email, password: "wrong-server-password" },
         })
         .catch(() => { });
-      await flush();
-
       const logs = (await ctx.adapter.findMany({
         model: "auditLog",
         where: [{ field: "endpoint", value: "/sign-in/email" }],
@@ -206,8 +234,6 @@ describe("audit log plugin", () => {
         body: { userId: target.id },
         headers,
       });
-      await flush();
-
       const logs = (await ctx.adapter.findMany({
         model: "auditLog",
         where: [{ field: "endpoint", value: "/admin/ban-user" }],
@@ -232,8 +258,6 @@ describe("audit log plugin", () => {
         },
         headers: new Headers({ [AUDIT_SYSTEM_HEADER]: "user-import" }),
       });
-      await flush();
-
       const logs = (await ctx.adapter.findMany({
         model: "auditLog",
         where: [{ field: "endpoint", value: "/sign-up/email" }],
@@ -257,8 +281,6 @@ describe("audit log plugin", () => {
           headers: { [AUDIT_SYSTEM_HEADER]: "spoofed-by-client" },
         },
       });
-      await flush();
-
       const logs = (await ctx.adapter.findMany({
         model: "auditLog",
         where: [{ field: "endpoint", value: "/sign-in/email" }],
@@ -276,8 +298,6 @@ describe("audit log plugin", () => {
           body: { email: "nobody-here@example.com", password: "wrong" },
         })
         .catch(() => { });
-      await flush();
-
       const logs = (await ctx.adapter.findMany({
         model: "auditLog",
         where: [{ field: "endpoint", value: "/sign-in/email" }],
@@ -305,8 +325,6 @@ describe("audit log plugin", () => {
           name: "Invisible",
         },
       });
-      await flush();
-
       const logs = await ctxNoServer.adapter.findMany({
         model: "auditLog",
         where: [{ field: "endpoint", value: "/sign-up/email" }],
@@ -337,8 +355,6 @@ describe("audit log plugin", () => {
           name: "Meta",
         },
       });
-      await flush();
-
       const logs = (await ctxMeta.adapter.findMany({
         model: "auditLog",
         where: [{ field: "endpoint", value: "/sign-up/email" }],
@@ -375,6 +391,25 @@ describe("audit log plugin", () => {
       expect(failureLog).toBeDefined();
       expect(failureLog!.success).toBe(false);
       expect(failureLog!.errorCode).toBe("INVALID_EMAIL_OR_PASSWORD");
+    });
+
+    it("should log failed email OTP sign-in", async () => {
+      await client.signIn.emailOtp({
+        email: testUser.email,
+        otp: "000000",
+      });
+
+      const logs = (await ctx.adapter.findMany({
+        model: "auditLog",
+        where: [{ field: "endpoint", value: "/sign-in/email-otp" }],
+      })) as AuditLogEntry[];
+
+      const failureLog = logs.find(
+        (entry) =>
+          !entry.success && entry.message.includes("Failed email OTP sign-in"),
+      );
+      expect(failureLog).toBeDefined();
+      expect(failureLog!.errorCode).toBeTruthy();
     });
 
     it("should log failed sign-up with existing email", async () => {

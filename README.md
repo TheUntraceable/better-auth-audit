@@ -114,6 +114,7 @@ Routers are auto-detected based on installed Better Auth plugins. Each router lo
 | **admin** | `admin` | User CRUD, role changes, bans, impersonation, session revocation |
 | **organization** | `organization` | Org CRUD, invitations, member management, role updates |
 | **passkey** | `passkey` | Passkey sign-in, register, delete, update |
+| **email OTP** | `email-otp` | OTP requests, email verification, sign-in, password reset, email changes |
 | **magic-link** | `magic-link` | Magic link send and verify |
 | **username** | `username` | Username sign-in |
 | **anonymous** | `anonymous` | Anonymous sign-in, account deletion |

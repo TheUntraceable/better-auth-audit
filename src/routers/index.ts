@@ -10,3 +10,4 @@ export { phoneNumberRouter } from "./phone-number";
 export { apiKeyRouter } from "./api-key";
 export { oneTimeTokenRouter } from "./one-time-token";
 export { multiSessionRouter } from "./multi-session";
+export { emailOtpRouter } from "./email-otp";

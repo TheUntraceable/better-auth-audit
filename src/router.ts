@@ -13,6 +13,7 @@ import {
   apiKeyRouter,
   oneTimeTokenRouter,
   multiSessionRouter,
+  emailOtpRouter,
 } from "./routers";
 
 /** All built-in routers keyed by id */
@@ -29,6 +30,7 @@ const builtinRouters: Record<string, AuditRouter> = {
   [apiKeyRouter.id]: apiKeyRouter,
   [oneTimeTokenRouter.id]: oneTimeTokenRouter,
   [multiSessionRouter.id]: multiSessionRouter,
+  [emailOtpRouter.id]: emailOtpRouter,
 };
 
 /** Finds the handler for a path, or `undefined` if none matches. */
