@@ -1,12 +1,13 @@
-import type { BetterAuthPlugin } from "better-auth";
+import type { BetterAuthOptions, BetterAuthPlugin } from "better-auth";
 import {
   createAuthEndpoint,
   createAuthMiddleware,
   getSessionFromCtx,
-  getIP,
   isAPIError,
 } from "better-auth/api";
+import * as betterAuthApi from "better-auth/api";
 import { APIError } from "better-auth";
+
 import * as z from "zod";
 import { schema } from "./schema";
 import { resolveRoutes } from "./router";
@@ -35,6 +36,21 @@ export {
   bodyEmail,
   bodyPhone,
 } from "./routers/utils";
+
+type IPResolver = (
+  req: Request | Headers,
+  options: BetterAuthOptions,
+) => string | null;
+
+// better-auth 1.7.0 renamed this export `getIp` -> `getIP`. Both names resolve
+// to the same `@better-auth/core/utils/ip` function with an unchanged
+// signature, so picking whichever one the installed version exports keeps the
+// peer range open to 1.5 and 1.6 instead of forcing a 1.7 floor. A named
+// import of either would be a link-time error on the versions lacking it.
+const apiExports = betterAuthApi as unknown as Partial<
+  Record<"getIP" | "getIp", IPResolver>
+>;
+const resolveIP = apiExports.getIP ?? apiExports.getIp;
 
 type SessionData = {
   user?: { id: string; email?: string; name?: string };
@@ -161,9 +177,10 @@ export const auditLog = (options: AuditLogOptions = {}) => {
                   endpoint: path,
                   // Honors advanced.ipAddress config (custom headers,
                   // disableIpTracking, IPv6 normalization).
-                  ipAddress: ctx.headers
-                    ? getIP(ctx.headers, ctx.context.options)
-                    : null,
+                  ipAddress:
+                    ctx.headers && resolveIP
+                      ? resolveIP(ctx.headers, ctx.context.options)
+                      : null,
                   userAgent: ctx.headers?.get("user-agent") ?? null,
                   metadata,
                   source,
