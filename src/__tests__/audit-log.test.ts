@@ -54,6 +54,17 @@ let test: typeof ctx.test;
 beforeAll(async () => {
   ctx = await auth.$context;
   test = ctx.test;
+
+  // better-auth >=1.7 treats an `emailVerified: false` row as carrying no
+  // proof of mailbox ownership, so the first email-primary proof to resolve
+  // to it (the email OTP sign-in below) deletes every account linked to it —
+  // including the password credential the rest of this suite signs in with.
+  const existing = await ctx.internalAdapter.findUserByEmail(testUser.email);
+  if (existing && !existing.user.emailVerified) {
+    await ctx.internalAdapter.updateUser(existing.user.id, {
+      emailVerified: true,
+    });
+  }
 });
 
 describe("audit log plugin", () => {
