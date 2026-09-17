@@ -42,7 +42,7 @@
     "zod": "^3.0.0 || ^4.0.0"
   },
   "devDependencies": {
-    "better-auth": "1.7.1",
+    "better-auth": "1.7.5",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
     "vitest": "^4.1.0",
