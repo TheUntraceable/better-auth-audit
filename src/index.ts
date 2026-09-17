@@ -3,7 +3,7 @@ import {
   createAuthEndpoint,
   createAuthMiddleware,
   getSessionFromCtx,
-  getIp,
+  getIP,
   isAPIError,
 } from "better-auth/api";
 import { APIError } from "better-auth";
@@ -162,7 +162,7 @@ export const auditLog = (options: AuditLogOptions = {}) => {
                   // Honors advanced.ipAddress config (custom headers,
                   // disableIpTracking, IPv6 normalization).
                   ipAddress: ctx.headers
-                    ? getIp(ctx.headers, ctx.context.options)
+                    ? getIP(ctx.headers, ctx.context.options)
                     : null,
                   userAgent: ctx.headers?.get("user-agent") ?? null,
                   metadata,
