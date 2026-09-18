@@ -1,4 +1,4 @@
-import type { BetterAuthOptions, BetterAuthPlugin } from "better-auth";
+import type { BetterAuthPlugin } from "better-auth";
 import {
   createAuthEndpoint,
   createAuthMiddleware,
@@ -37,19 +37,22 @@ export {
   bodyPhone,
 } from "./routers/utils";
 
-type IPResolver = (
-  req: Request | Headers,
-  options: BetterAuthOptions,
-) => string | null;
-
 // better-auth 1.7.0 renamed this export `getIp` -> `getIP`. Both names resolve
 // to the same `@better-auth/core/utils/ip` function with an unchanged
 // signature, so picking whichever one the installed version exports keeps the
 // peer range open to 1.5 and 1.6 instead of forcing a 1.7 floor. A named
 // import of either would be a link-time error on the versions lacking it.
-const apiExports = betterAuthApi as unknown as Partial<
-  Record<"getIP" | "getIp", IPResolver>
->;
+// Inferring the signature from whichever name the installed version declares
+// keeps the call below checked against better-auth's own type under every
+// version in the peer range, instead of against a copy that can drift.
+type IPResolver = typeof betterAuthApi extends { getIP: infer Fn }
+  ? Fn
+  : typeof betterAuthApi extends { getIp: infer Fn }
+    ? Fn
+    : never;
+
+const apiExports: Partial<Record<"getIP" | "getIp", IPResolver>> =
+  betterAuthApi;
 const resolveIP = apiExports.getIP ?? apiExports.getIp;
 
 type SessionData = {
@@ -110,6 +113,17 @@ export const auditLog = (options: AuditLogOptions = {}) => {
     schema,
 
     init(ctx) {
+      if (!resolveIP) {
+        // Refusing to start beats running degraded: the whole point of this
+        // plugin is evidence, and a rename we failed to track would otherwise
+        // null out the ipAddress of every row without anyone noticing.
+        throw new Error(
+          `[audit-log] better-auth ${ctx.version} exports neither \`getIP\` nor ` +
+            '`getIp` from "better-auth/api", so audit entries cannot record an ' +
+            "IP address. This is a better-auth-audit bug — please report it.",
+        );
+      }
+
       const installedPluginIds = (ctx.options.plugins ?? []).map(
         (p) => p.id,
       );

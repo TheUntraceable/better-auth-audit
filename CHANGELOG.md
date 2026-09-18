@@ -20,6 +20,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `runInBackgroundOrAwait` only appears around 1.4.6, so the range published
   with 1.3.0 was already inaccurate.
 
+- The plugin now throws from `init` when better-auth exports neither `getIP`
+  nor `getIp`, instead of quietly writing `ipAddress: null` on every entry. A
+  further rename upstream is now a startup failure naming both candidates and
+  the installed version, not a silent loss of evidence. The resolver's type is
+  also inferred from whichever name better-auth declares, so a signature change
+  fails typecheck rather than being erased by a cast.
+
 ### Changed
 
 - Bumped the `better-auth` devDependency to 1.7.5.
