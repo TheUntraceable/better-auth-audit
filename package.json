@@ -56,9 +56,6 @@
     "test": "vitest run",
     "prepublishOnly": "bun run typecheck && bun run test && bun run build"
   },
-  "engines": {
-    "node": ">=22.16.0"
-  },
   "peerDependencies": {
     "better-auth": "^1.5.0",
     "zod": "^3.0.0 || ^4.0.0"

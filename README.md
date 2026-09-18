@@ -238,6 +238,19 @@ anonymous server-side auth flows (a sign-in attempt from a server action, say)
 remain `source: "server"`. One caveat follows from the HTTP-only guard: do not
 forward untrusted client headers wholesale into `auth.api.*` calls.
 
+## Development
+
+```bash
+bun install
+bun run typecheck
+bun run test
+bun run build
+```
+
+The test suite needs Node >= 22.16.0 (see `.nvmrc`): better-auth's test utilities
+call `StatementSync.prototype.columns()`, which earlier `node:sqlite` builds do
+not expose. The published package itself has no such requirement.
+
 ## License
 
 MIT

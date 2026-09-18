@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   Note that `^1.5.0` is the real floor, not the `^1.2.0` advertised before
   1.4.0: `isAPIError` is absent from every 1.4.x build and
-  `runInBackgroundOrAwait` only appears around 1.4.6, so the range published
+  `runInBackgroundOrAwait` first appears in 1.4.8, so the range published
   with 1.3.0 was already inaccurate.
 
 - The plugin now throws from `init` when better-auth exports neither `getIP`
@@ -30,9 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Bumped the `better-auth` devDependency to 1.7.5.
-- Declared `engines.node` as `>=22.16.0`, the first version whose `node:sqlite`
-  exposes `StatementSync.prototype.columns()`. better-auth's test utilities
-  need it, so the test suite cannot run below that.
+- Pinned the test toolchain to Node 22.16.0 in `.nvmrc`, the first version
+  whose `node:sqlite` exposes `StatementSync.prototype.columns()`. better-auth's
+  test utilities need it, so the test suite cannot run below that. This is a
+  contributor requirement only: the package declares no `engines` field,
+  because nothing in `dist` depends on it.
 - Added `repository`, `homepage`, `bugs` and `keywords` metadata, plus a
   `prepublishOnly` script running typecheck, tests and build.
 - Added this changelog and a `LICENSE` file matching the MIT license already
